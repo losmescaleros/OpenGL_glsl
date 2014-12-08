@@ -19,4 +19,28 @@ struct Vertex
 	glm::vec3 Color;
 };
 
+struct Material
+{
+	glm::vec4 diffuse;
+	glm::vec4 ambient;
+	glm::vec4 specular;
+	glm::vec4 emissive;
+	float shininess;
+};
+
+struct Mesh
+{
+	GLuint vao;
+	unsigned int indexCount;
+	unsigned int indexOffset;
+	Material * material;
+	int numFaces;
+};
+
+struct Light
+{
+	glm::vec4 position;
+	glm::vec3 intensity;
+};
+
 #endif

@@ -57,13 +57,13 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\extern\glm-0.9.5.4\;..\extern\glew-1.11.0\include\;..\extern\freeglut-2.8.1\include\;include\;include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\extern\glm-0.9.5.4\;..\extern\glew-1.11.0\include\;..\extern\freeglut-2.8.1\include\;include\;..\extern\assimp-3.1.1\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>..\extern\glew-1.11.0\lib\Debug\Win32;..\extern\freeglut-2.8.1\lib\x86\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>freeglut_static.lib;glew32sd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\extern\assimp-3.1.1\lib\x86\Debug;..\extern\glew-1.11.0\lib\Debug\Win32;..\extern\freeglut-2.8.1\lib\x86\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>freeglut_static.lib;glew32sd.lib;assimpd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -76,15 +76,15 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>..\extern\glm-0.9.5.4\;..\extern\glew-1.11.0\include\;..\extern\freeglut-2.8.1\include\;include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\extern\glm-0.9.5.4\;..\extern\glew-1.11.0\include\;..\extern\freeglut-2.8.1\include\;include\;..\extern\assimp-3.1.1\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>freeglut_static.lib;glew32s.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>..\extern\glew-1.11.0\lib\Release\Win32;..\extern\freeglut-2.8.1\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>freeglut_static.lib;glew32s.lib;assimp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\extern\assimp-3.1.1\lib\x86;..\extern\glew-1.11.0\lib\Release\Win32;..\extern\freeglut-2.8.1\lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -103,6 +103,10 @@
   <ItemGroup>
     <Text Include="data\shaders\simpleShader.frag" />
     <Text Include="data\shaders\simpleShader.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="data\shaders\lambertianShader.frag" />
+    <None Include="data\shaders\lambertianShader.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

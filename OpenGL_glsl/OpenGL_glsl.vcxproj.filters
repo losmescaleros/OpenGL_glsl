@@ -49,4 +49,8 @@
     <Text Include="data\shaders\simpleShader.vert" />
     <Text Include="data\shaders\simpleShader.frag" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="data\shaders\lambertianShader.vert" />
+    <None Include="data\shaders\lambertianShader.frag" />
+  </ItemGroup>
 </Project>

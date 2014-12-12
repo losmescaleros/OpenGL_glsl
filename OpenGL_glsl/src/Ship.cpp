@@ -1,42 +1,35 @@
-#include <OpenGL_Shaders.h>
 #include <Ship.h>
 
+const float Ship::LEFT_BOUNDARY = -7.0f;
+const float Ship::RIGHT_BOUNDARY = 7.0f;
+const float Ship::MOVEMENT_SPEED = 2.0f;
+
 Ship::Ship()
-	: vertices(0),
-	indices(0),
-	isAlive(true),
-	isRegistered(false),
-	modelMatrix(1)
+	: m_Alive(true)
 {
 
 }
 
-Ship::Ship(std::vector<Vertex> vert , std::vector<GLuint> ind)
-	:vertices(vert),
-	indices(ind), 
-	isAlive(true),
-	isRegistered(false),
-	modelMatrix(1)
-{
+void Ship::Translate(const glm::vec3& delta, bool local /* = true */)
+{	
+	if (local)
+	{
+		m_Position += m_Rotation * delta;
+	}
+	else
+	{
+		m_Position += delta;
+	}
 
-}
+	if (m_Position.x < LEFT_BOUNDARY)
+	{
+		m_Position.x = LEFT_BOUNDARY;
+	}
 
-std::vector<Vertex> Ship::GetVertices()
-{
-	return vertices;
-}
+	if (m_Position.x > RIGHT_BOUNDARY)
+	{
+		m_Position.x = RIGHT_BOUNDARY;
+	}
 
-std::vector<GLuint> Ship::GetIndices()
-{
-	return indices;
-}
-
-glm::mat4 Ship::GetModelMatrix()
-{
-	return modelMatrix;
-}
-
-void Ship::SetModelMatrix(const glm::mat4& mat)
-{
-	modelMatrix = mat;
+	m_ViewDirty = true;
 }

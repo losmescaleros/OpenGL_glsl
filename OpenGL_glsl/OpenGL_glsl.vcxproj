@@ -89,13 +89,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Barrier.cpp" />
+    <ClCompile Include="src\ModelInstance.cpp" />
     <ClCompile Include="src\Ship.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="include\Alien.h" />
     <ClInclude Include="include\Barrier.h" />
     <ClInclude Include="include\Camera.h" />
+    <ClInclude Include="include\ModelInstance.h" />
     <ClInclude Include="include\OpenGL_Shaders.h" />
     <ClInclude Include="include\main.h" />
     <ClInclude Include="include\Ship.h" />

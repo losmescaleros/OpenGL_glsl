@@ -1,7 +1,8 @@
 #include <OpenGL_Shaders.h>
 #include <Camera.h>
-#include <Ship.h>
 #include <main.h>
+#include <ModelInstance.h>
+#include <Ship.h>
 #include <assimp/Importer.hpp>
 #include <assimp/PostProcess.h>
 #include <assimp/Scene.h>
@@ -43,13 +44,30 @@ const aiScene* scene;
 float modelScaleFactor;
 std::vector<glm::mat4> matrixStack;
 std::vector<Mesh> meshes;
-static const std::string model = "../data/models/bench.obj";
+
+ModelAsset cubeAsset;
+static const std::string cubeModel = "../data/models/block.obj";
+ModelAsset shipAsset;
+static const std::string shipModel = "../data/models/ship.obj";
+ModelAsset alienAsset;
+static const std::string alienModel = "../data/models/Space_Invader.obj";
+
+Ship ship;
+ModelInstance block1;
+ModelInstance block2;
+ModelInstance block3;
+ModelInstance block4;
+
+ModelInstance alien1;
+
+std::vector<ModelInstance*> g_Instances;
 
 // glsl handles
 GLuint g_ShaderProgram = 0;
 
 // Uniform handles
 GLint g_UniformMVP = -1;
+GLint g_UniformColor = -1;
 GLint g_TimeUniformId = -1;
 GLuint materialUniformID;
 GLuint matricesUniformID;
@@ -58,6 +76,8 @@ GLuint matricesUniformID;
 GLint g_PositionAttributeId;
 GLint g_NormalAttributeId;
 GLint g_AmbientColorAttributeId;
+GLint g_DiffuseColorAttributeId;
+GLint g_SpecularColorAttributeId;
 //GLint g_colorAttributeId;
 
 // Shader handles
@@ -69,12 +89,15 @@ std::string vertexShaderFilePath = "../data/shaders/lambertianShader.vert";
 std::string fragmentShaderFilePath = "../data/shaders/lambertianShader.frag";
 
 // Game variables
+GLuint vertexBuffer, indexBuffer;
+
 std::vector<GLuint> g_vertexBuffers;
 std::vector<GLuint> g_indexBuffers;
 
-std::vector<float> g_Vertices;
+std::vector<Vertex> g_Vertices;
 std::vector<float> g_Normals;
 std::vector<unsigned int> g_Indices;
+
 
 // Forward declarations for functions
 // Initialization functions
@@ -100,11 +123,17 @@ void ReshapeGL(int width, int height);
 
 // Helper functions
 void DrawElement(GLuint vao, GLuint shaderProgram, glm::mat4 model, std::vector<GLuint> indices, GLuint vertexBuffer);
+void ImportAssets();
 bool ImportModelFromFile(const std::string& file);
 void GetBoundingBox(aiVector3D* min, aiVector3D* max);
 void GetBoundingBoxForNode(const aiNode* nd, aiVector3D* min, aiVector3D* max);
 void DrawElements(const aiScene* scn, const aiNode* nd);
-void GenerateVaosAndBuffers(const aiScene* scn);
+void GenerateVaosAndBuffers(const aiScene* scn, ModelAsset* asset);
+void CreateModelInstances();
+void LoadAsset(const aiScene* scn, ModelAsset* asset);
+void DrawInstance(ModelInstance* inst);
+
+glm::mat4 Translate(GLfloat x, GLfloat y, GLfloat z);
 
 void PushMatrix(glm::mat4 matrix);
 void PopMatrix();
@@ -122,15 +151,9 @@ int main(int argc, char * argv[])
 
 	// Initialize OpenGL and glew
 	InitGL(argc, argv);
-	InitGLEW();
+	InitGLEW();	
 
-	// Try to import some models
-	if (!ImportModelFromFile(model))
-	{
-		return 0;
-	}
-
-	// Load the shaders
+	// Load the shaders and push them onto the shader list
 	vertexShader = LoadShader(GL_VERTEX_SHADER, vertexShaderFilePath);
 	fragmentShader = LoadShader(GL_FRAGMENT_SHADER, fragmentShaderFilePath);
 
@@ -144,182 +167,208 @@ int main(int argc, char * argv[])
 	
 	// Get handles for glsl vertex locations
 	g_PositionAttributeId = glGetAttribLocation(g_ShaderProgram, "in_position");
-	//colorAtribID = glGetAttribLocation(g_ShaderProgram, "in_color");
-	g_AmbientColorAttributeId = glGetAttribLocation(g_ShaderProgram, "in_ambient");
+	g_NormalAttributeId = glGetAttribLocation(g_ShaderProgram, "in_normal");
 
 	// Get handles for glsl uniform variables
 	g_UniformMVP = glGetUniformLocation(g_ShaderProgram, "MVP");
-	g_TimeUniformId = glGetUniformLocation(g_ShaderProgram, "time");
-
-	GenerateVaosAndBuffers(scene);
+	g_UniformColor = glGetUniformLocation(g_ShaderProgram, "color");
 
 	// Make sure we disable and unbind everything to prevent rendering issues later.
 	glBindVertexArray(0);
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glDisableVertexAttribArray(g_PositionAttributeId);
-	glDisableVertexAttribArray(g_AmbientColorAttributeId);
+
+	ImportAssets();
+
+	CreateModelInstances();
 
 	glutMainLoop();
 }
 
-void GenerateVaosAndBuffers(const aiScene* scn)
+glm::mat4 Translate(GLfloat x, GLfloat y, GLfloat z)
 {
-	Material material;
-	Mesh mesh;
-	GLuint vertexBuffer, indexBuffer;
-
-	for (unsigned int i = 0; i < scn->mNumMeshes; i++)
-	{
-		
-		// Get the offset to this mesh's indices
-		mesh.indexOffset = g_Indices.size();
-		unsigned int indexCountBefore = g_Indices.size();
-
-		int vertexIndexOffset = g_Vertices.size() / 3;
-
-		const aiMesh* aiMesh = scn->mMeshes[i];
-
-		unsigned int* faceArray;
-
-		// Get vertices
-		if (aiMesh->HasPositions())
-		{
-			for (unsigned int j = 0; j < aiMesh->mNumVertices; j++)
-			{
-				aiVector3D &vec = aiMesh->mVertices[j];
-
-				g_Vertices.push_back(vec.x);
-				g_Vertices.push_back(vec.y);
-				g_Vertices.push_back(vec.z);
-			}
-		}
-		// Get Normals
-		if (aiMesh->HasNormals())
-		{
-			for (unsigned int j = 0; j < aiMesh->mNumVertices; j++)
-			{
-				aiVector3D &vec = aiMesh->mNormals[j];
-				g_Normals.push_back(vec.x);
-				g_Normals.push_back(vec.y);
-				g_Normals.push_back(vec.z);
-			}
-		}
-		// Get mesh indices
-		for (unsigned int t = 0; t < aiMesh->mNumFaces; t++)
-		{
-			aiFace* face = &aiMesh->mFaces[t];
-			// Only process faces with 3 indices
-			if (face->mNumIndices != 3)
-			{
-				std::cout << "Found a mesh face with number of indices not equal to 3. Skipping this face." << std::endl;
-				continue;
-			}
-
-			g_Indices.push_back(face->mIndices[0] + vertexIndexOffset);
-			g_Indices.push_back(face->mIndices[1] + vertexIndexOffset);
-			g_Indices.push_back(face->mIndices[2] + vertexIndexOffset);
-		}
-
-		mesh.indexCount = g_Indices.size() - indexCountBefore;
-		mesh.material = &material;
-
-		//faceArray = (unsigned int* )malloc(sizeof(unsigned int) * aiMesh->mNumFaces * 3);
-		//unsigned int faceIndex = 0;
-		//
-		//for (unsigned int t = 0; t < aiMesh->mNumFaces; t++)
-		//{
-		//	const aiFace* face = &aiMesh->mFaces[t];
-
-		//	memcpy(&faceArray[faceIndex], face->mIndices, 3 * sizeof(unsigned int));
-		//	faceIndex += 3;
-		//}
-
-		mesh.numFaces = scn->mMeshes[i]->mNumFaces;
-
-		// Generate VAO for mesh
-		glGenVertexArrays(1, &(mesh.vao));
-		glBindVertexArray(mesh.vao);
-		//
-		//// Generate buffer for the faces
-		//glGenBuffers(1, &vertexBuffer);
-		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vertexBuffer);
-		//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * aiMesh->mNumFaces * 3, faceArray, GL_STATIC_DRAW);
-
-		//// Vertex position buffer
-		//if (aiMesh->HasPositions())
-		//{
-		//	glGenBuffers(1, &vertexBuffer);
-		//	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-		//	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * aiMesh->mNumVertices, aiMesh->mVertices, GL_STATIC_DRAW);
-		//	glEnableVertexAttribArray(g_PositionAttributeId);
-		//	glVertexAttribPointer(g_PositionAttributeId, 3, GL_FLOAT, 0, 0, 0);
-		//}
-
-		//// Vertex normal buffer
-		//if (aiMesh->HasNormals())
-		//{
-		//	glGenBuffers(1, &vertexBuffer);
-		//	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-		//	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * aiMesh->mNumVertices, aiMesh->mNormals, GL_STATIC_DRAW);			
-		//	glEnableVertexAttribArray(g_NormalAttributeId);
-		//	glVertexAttribPointer(g_NormalAttributeId, 3, GL_FLOAT, 0, 0, 0);
-		//}
-
-		//// Unbind
-		//glBindVertexArray(0);
-		//glBindBuffer(GL_ARRAY_BUFFER, 0);
-		//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-		//aiMaterial * aiMaterial = scn->mMaterials[aiMesh->mMaterialIndex];
-		//aiColor4D diffuse(0.f, 0.f, 0.f, 0.f);
-		//if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_DIFFUSE, &diffuse) == AI_SUCCESS)
-		//{
-		//	glm::vec4 matDiffuse{ diffuse.r, diffuse.g, diffuse.b, diffuse.a };
-		//	material.diffuse = matDiffuse;
-		//}
-
-		//aiColor4D ambient(0.f, 0.f, 0.f, 0.f);
-		//if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_AMBIENT, &ambient) == AI_SUCCESS)
-		//{
-		//	glm::vec4 matAmbient{ ambient.r, ambient.g, ambient.b, ambient.a };
-		//	material.ambient = matAmbient;
-		//}
-
-		//aiColor4D specular(0.f, 0.f, 0.f, 0.f);
-		//if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_SPECULAR, &specular) == AI_SUCCESS)
-		//{
-		//	glm::vec4 matSpecular{ specular.r, specular.g, specular.b, specular.a };
-		//	material.specular = matSpecular;
-		//}
-
-		//aiColor4D emissive(0.f, 0.f, 0.f, 0.f);
-		//if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_EMISSIVE, &emissive) == AI_SUCCESS)
-		//{
-		//	glm::vec4 matEmmissive{ emissive.r, emissive.g, emissive.b, emissive.a };
-		//	material.emissive = matEmmissive;
-		//}
-
-		//float shininess = 0.0f;
-		//unsigned int max;
-		//aiGetMaterialFloatArray(aiMaterial, AI_MATKEY_SHININESS, &shininess, &max);
-		//material.shininess = shininess;
-
-		meshes.push_back(mesh);
-	}
-
-	glGenBuffers(1, &vertexBuffer);
-	glGenBuffers(1, &indexBuffer);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-	glBufferData(GL_ARRAY_BUFFER, g_Vertices.size() * sizeof(float), &g_Vertices[0], GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, g_Indices.size() * sizeof(unsigned int), &g_Indices[0], GL_STATIC_DRAW);
-
-	glVertexAttribPointer(g_PositionAttributeId, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(g_PositionAttributeId);
+	return glm::translate(glm::mat4(), glm::vec3(x, y, z));
 }
+
+void CreateModelInstances()
+{
+	block1.SetAsset(&cubeAsset);
+	block1.Translate(glm::vec3(-6, -3.5, 0));
+	block1.Scale(glm::vec3(1, 1, 0.5));
+	g_Instances.push_back(&block1);
+
+	block2.SetAsset(&cubeAsset);
+	block2.Translate(glm::vec3(-2, -3.5, 0));
+	block2.Scale(glm::vec3(1, 1, 0.5));
+	g_Instances.push_back(&block2);
+
+	block3.SetAsset(&cubeAsset);
+	block3.Translate(glm::vec3(2, -3.5, 0));
+	block3.Scale(glm::vec3(1, 1, 0.5));
+	g_Instances.push_back(&block3);
+
+	block4.SetAsset(&cubeAsset);
+	block4.Translate(glm::vec3(6, -3.5, 0));
+	block4.Scale(glm::vec3(1, 1, 0.5));
+	g_Instances.push_back(&block4);
+
+	alien1.SetAsset(&alienAsset);
+	alien1.Scale(glm::vec3(0.1, 0.1, 0.05));
+	alien1.Translate(glm::vec3(-7, 4, 0));
+	g_Instances.push_back(&alien1);
+
+	ship.SetAsset(&shipAsset);
+	ship.Translate(glm::vec3(0, -4.5, 0));
+	//ship.asset = &shipAsset;
+	/*ship.transform = ship.transform * glm::rotate(ship.transform, -90.0f, glm::vec3(1, 0, 0));
+	ship.transform = glm::translate(ship.transform, glm::vec3(0, 1, -4.5));*/
+	
+	g_Instances.push_back(&ship);
+}
+
+void ImportAssets()
+{
+	ImportModelFromFile(cubeModel);
+	LoadAsset(scene, &cubeAsset);
+
+	ImportModelFromFile(shipModel);
+	LoadAsset(scene, &shipAsset);
+
+	ImportModelFromFile(alienModel);
+	LoadAsset(scene, &alienAsset);
+}
+
+//bool ImportAssets(std::string modelFile, ModelAsset* asset)
+//{
+//	ImportModelFromFile(modelFile);
+//
+//	GenerateVaosAndBuffers(scene, asset);
+//
+//	glGenBuffers(1, &vertexBuffer);
+//	glGenBuffers(1, &indexBuffer);
+//
+//	glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+//	glBufferData(GL_ARRAY_BUFFER, g_Vertices.size() * sizeof(Vertex), &g_Vertices[0], GL_STATIC_DRAW);
+//
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+//	glBufferData(GL_ELEMENT_ARRAY_BUFFER, g_Indices.size() * sizeof(unsigned int), &g_Indices[0], GL_STATIC_DRAW);
+//	// Position and normal attributes
+//	glVertexAttribPointer(g_PositionAttributeId, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), MEMBER_OFFSET(Vertex, Position));
+//	glEnableVertexAttribArray(g_PositionAttributeId);
+//
+//	//glVertexAttribPointer(g_NormalAttributeId, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), MEMBER_OFFSET(Vertex, Normal));
+//	//glEnableVertexAttribArray(g_NormalAttributeId);
+//	//// Color attributes
+//	//glVertexAttribPointer(g_AmbientColorAttributeId, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), MEMBER_OFFSET(Vertex, Ambient));
+//	//glEnableVertexAttribArray(g_AmbientColorAttributeId);
+//
+//	//glVertexAttribPointer(g_DiffuseColorAttributeId, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), MEMBER_OFFSET(Vertex, Diffuse));
+//	//glEnableVertexAttribArray(g_DiffuseColorAttributeId);
+//
+//	//glVertexAttribPointer(g_SpecularColorAttributeId, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), MEMBER_OFFSET(Vertex, Specular));
+//	//glEnableVertexAttribArray(g_SpecularColorAttributeId);
+//
+//	return true;
+//}
+
+//void GenerateVaosAndBuffers(const aiScene* scn, ModelAsset* asset)
+//{
+//	Material material;
+//	Mesh mesh;	
+//	
+//	for (unsigned int i = 0; i < scn->mNumMeshes; i++)
+//	{
+//		// Get the offset to this mesh's indices
+//		asset->indexOffset = g_Indices.size();
+//		// mesh.indexOffset = g_Indices.size();
+//
+//		unsigned int indexCountBefore = g_Indices.size();
+//		int vertexIndexOffset = g_Vertices.size() / 3;
+//
+//		const aiMesh* aiMesh = scn->mMeshes[i];
+//		unsigned int* faceArray;
+//
+//		for (unsigned j = 0; j < aiMesh->mNumVertices; j++)
+//		{
+//			Vertex v;
+//
+//			// Get vertex positions
+//			if (aiMesh->HasPositions())
+//			{
+//				aiVector3D &vec = aiMesh->mVertices[j];
+//				v.Position = glm::vec3(vec.x, vec.y, vec.z);
+//			}
+//			// Get vertex normals
+//			/*if (aiMesh->HasNormals())
+//			{
+//			aiVector3D &vec = aiMesh->mNormals[j];
+//			v.Normal = glm::vec3(vec.x, vec.y, vec.z);
+//			}*/
+//
+//			//aiMaterial * aiMaterial = scn->mMaterials[aiMesh->mMaterialIndex];
+//			//aiColor4D ambient(0.f, 0.f, 0.f, 0.f);
+//			//
+//			//if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_AMBIENT, &ambient) == AI_SUCCESS)
+//			//{
+//			//	// material.ambient = matAmbient;
+//			//}
+//			//glm::vec4 matAmbient{ ambient.r, ambient.g, ambient.b, ambient.a };
+//			//v.Ambient = matAmbient;
+//
+//			//aiColor4D diffuse(0.f, 0.f, 0.f, 0.f);
+//
+//			//if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_AMBIENT, &diffuse) == AI_SUCCESS)
+//			//{
+//			//	// material.ambient = matAmbient;
+//			//}
+//			//glm::vec4 matDiffuse{ diffuse.r, diffuse.g, diffuse.b, diffuse.a };
+//			//v.Diffuse = matDiffuse;
+//
+//			//aiColor4D specular(0.f, 0.f, 0.f, 0.f);
+//
+//			//if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_AMBIENT, &specular) == AI_SUCCESS)
+//			//{
+//			//	// material.ambient = matAmbient;
+//			//}
+//			//glm::vec4 matSpecular{ specular.r, specular.g, specular.b, specular.a };
+//			//v.Ambient = matSpecular;
+//
+//			g_Vertices.push_back(v);
+//		}
+//		// Get mesh indices
+//		for (unsigned int t = 0; t < aiMesh->mNumFaces; t++)
+//		{
+//			aiFace* face = &aiMesh->mFaces[t];
+//			// Only process faces with 3 indices
+//			if (face->mNumIndices != 3)
+//			{
+//				std::cout << "Found a mesh face with number of indices not equal to 3. Skipping this face." << std::endl;
+//				continue;
+//			}
+//
+//			g_Indices.push_back(face->mIndices[0] + vertexIndexOffset);
+//			g_Indices.push_back(face->mIndices[1] + vertexIndexOffset);
+//			g_Indices.push_back(face->mIndices[2] + vertexIndexOffset);
+//		}
+//
+//		asset->indexCount = g_Indices.size() - indexCountBefore;
+//		asset->material = &material;
+//
+//		/*mesh.indexCount = g_Indices.size() - indexCountBefore;
+//		mesh.material = &material;*/
+//		//mesh.numFaces = scn->mMeshes[i]->mNumFaces;
+//
+//		// Generate VAO for mesh
+//		/*glGenVertexArrays(1, &(mesh.vao));
+//		glBindVertexArray(mesh.vao);*/
+//
+//		glGenVertexArrays(1, &asset->vao);
+//		glBindVertexArray(asset->vao);
+//
+//		// meshes.push_back(mesh);
+//	}
+//}
 
 void DisplayGL()
 {
@@ -328,19 +377,32 @@ void DisplayGL()
 
 	glUseProgram(g_ShaderProgram);
 
-	DrawElements(scene, scene->mRootNode);
-
-	/*for (Ship s : g_enemyShips)
+	for (int i = 0; i < g_Instances.size(); i++)
 	{
-		DrawElement(s.vaoId, g_ShaderProgram, s.GetModelMatrix(), s.GetIndices(), s.vertexBufferId);
-	}*/
+		DrawInstance(g_Instances[i]);		
+	}
 
-	gl_time += 0.01f;
 	// Unbind program and vertex array, then swap buffers
 	glUseProgram(0);
 	glBindVertexArray(0);
 
 	glutSwapBuffers();
+}
+void DrawInstance(ModelInstance* inst)
+{
+	ModelAsset* asset = inst->GetModelAsset();
+	glBindVertexArray(asset->vao);
+	glm::mat4 modelMatrix = inst->GetModelMatrix();
+	glm::mat4 mvp = g_Camera.GetProjectionMatrix() * g_Camera.GetViewMatrix() * modelMatrix;
+	glUniformMatrix4fv(g_UniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
+
+	/*glm::vec4 color = inst.asset->material->diffuse;
+	float c[4] = { color.r, color.g, color.b, color.a };
+	glUniform4fv(g_UniformColor, 1, c);*/
+
+	glDrawElements(asset->drawType, asset->indexCount, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+
+	glBindVertexArray(0);
 }
 
 void DrawElements(const aiScene* scn, const aiNode* nd)
@@ -348,26 +410,22 @@ void DrawElements(const aiScene* scn, const aiNode* nd)
 	aiMatrix4x4 m = nd->mTransformation;
 	m.Transpose();
 
-	glm::mat4 modelMatrix{ m.a1, m.a2, m.a3, m.a4,
-		m.b1, m.b2, m.b3, m.b4,
-		m.c1, m.c2, m.c3, m.c4,
-		m.d1, m.d2, m.d3, m.d4 };
+	glm::mat4 modelMatrix = glm::toMat4(g_Rotation);
 
-	modelMatrix = modelMatrix * glm::toMat4(g_Rotation);
-
-	for (int i = 0; i < nd->mNumMeshes; i++)
+	for (int i = 0; i < meshes.size(); i++)
 	{
-		glBindVertexArray(meshes[nd->mMeshes[i]].vao);
+		glBindVertexArray(meshes[i].vao);
 		glm::mat4 mvp = g_Camera.GetProjectionMatrix() * g_Camera.GetViewMatrix() * modelMatrix;
 		glUniformMatrix4fv(g_UniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
+		
 
-		glDrawElements(GL_TRIANGLES, meshes[nd->mMeshes[i]].indexCount, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+		glDrawElements(GL_TRIANGLES, meshes[i].indexCount, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
 	}
 
-	for (int j = 0; j < nd->mNumChildren; j++)
+	/*for (int j = 0; j < nd->mNumChildren; j++)
 	{
 		DrawElements(scn, nd->mChildren[j]);
-	}
+	}*/
 }
 
 void DrawElement(GLuint vao, GLuint shaderProgram, glm::mat4 model, std::vector<GLuint> indices, GLuint vertexBuffer)
@@ -561,7 +619,10 @@ void IdleGL()
 
 	float cameraSpeed = 1.0f;
 	
-	g_Camera.Translate(glm::vec3(g_D - g_A, g_Q - g_E, g_S - g_W) * cameraSpeed * deltaTime);
+	ship.Translate(glm::vec3(g_D - g_A, 0, 0) * Ship::MOVEMENT_SPEED * deltaTime);
+	alien1.Translate(glm::vec3(1, 0, 0) * cameraSpeed * deltaTime);
+
+	g_Camera.Translate(glm::vec3(0, g_Q - g_E, g_S - g_W) * cameraSpeed * deltaTime);
 
 	glutPostRedisplay();
 }
@@ -702,6 +763,7 @@ bool ImportModelFromFile(const std::string& file)
 	}
 
 	scene = importer.ReadFile(file, aiProcessPreset_TargetRealtime_Quality);
+	
 	// If there was an import error, print it and return
 	if (!scene)
 	{
@@ -720,6 +782,92 @@ bool ImportModelFromFile(const std::string& file)
 	modelScaleFactor = 1.0f / tmp;
 
 	return true;
+}
+
+void LoadAsset(const aiScene* scn, ModelAsset* asset)
+{
+	asset->drawType = GL_TRIANGLES;
+	asset->indexOffset = 0;
+	asset->indexCount = 0;
+	
+	glGenVertexArrays(1, &asset->vao);
+	glBindVertexArray(asset->vao);
+
+	glGenBuffers(1, &asset->vbo);	
+
+	glGenBuffers(1, &asset->indexBuffer);
+
+
+	std::vector<Vertex> vertices;
+	std::vector<unsigned int> indices;
+
+	for (unsigned int i = 0; i < scn->mNumMeshes; i++)
+	{
+		unsigned int indexCountBefore = indices.size();
+		int vertexIndexOffset = vertices.size() / 3;
+
+		const aiMesh* aiMesh = scn->mMeshes[i];
+		
+		// get the vertices 
+		for (unsigned j = 0; j < aiMesh->mNumVertices; j++)
+		{
+			Vertex v;
+
+			aiVector3D &vec = aiMesh->mVertices[j];
+			v.Position = glm::vec3(vec.x, vec.y, vec.z);
+			v.Normal = glm::vec3(0, 0, 0);
+
+			if (aiMesh->HasNormals())
+			{
+				aiVector3D &norm = aiMesh->mNormals[j];
+				v.Normal = glm::vec3(norm.x, norm.y, norm.z);
+			}
+
+			vertices.push_back(v);
+		}
+		for (unsigned int t = 0; t < aiMesh->mNumFaces; t++)
+		{
+			aiFace* face = &aiMesh->mFaces[t];
+			if (face->mNumIndices != 3)
+			{
+				std::cout << "Found a mesh face with number of indices not equal to 3. Skipping this face." << std::endl;
+				continue;
+			}
+			indices.push_back(face->mIndices[0] + vertexIndexOffset);
+			indices.push_back(face->mIndices[1] + vertexIndexOffset);
+			indices.push_back(face->mIndices[2] + vertexIndexOffset);
+		}
+		aiMaterial* aiMaterial = scn->mMaterials[aiMesh->mMaterialIndex];
+		// TODO: get material parameters
+
+		aiColor4D diffuse(0.f, 0.f, 0.f, 0.f);
+
+		Material* material = new Material();
+		
+		// asset->material->diffuse = glm::vec4(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
+		if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_DIFFUSE, &diffuse) == AI_SUCCESS)
+		{
+			material->diffuse = glm::vec4(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
+		}
+		asset->material = material;
+		// asset->material = material;
+		asset->indexCount = indices.size() - indexCountBefore;
+	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, asset->vbo);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), &vertices[0], GL_STATIC_DRAW);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, asset->indexBuffer);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+
+	glVertexAttribPointer(g_PositionAttributeId, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), MEMBER_OFFSET(Vertex, Position));
+	glEnableVertexAttribArray(g_PositionAttributeId);
+
+	glVertexAttribPointer(g_NormalAttributeId, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), MEMBER_OFFSET(Vertex, Normal));
+	glEnableVertexAttribArray(g_NormalAttributeId);
+	// Unbind
+	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void GetBoundingBox(aiVector3D* min, aiVector3D* max)

@@ -1,3 +1,6 @@
+#ifndef _OPEN_GL_SHADERS_H
+#define _OPEN_GL_SHADERS_H
+
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -22,3 +25,4 @@
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#endif

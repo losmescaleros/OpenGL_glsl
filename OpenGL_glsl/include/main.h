@@ -16,7 +16,7 @@ HitBox2d;
 struct Vertex
 {
 	glm::vec3 Position;
-	glm::vec3 Color;
+	glm::vec3 Normal;
 };
 
 struct Material
@@ -26,6 +26,15 @@ struct Material
 	glm::vec4 specular;
 	glm::vec4 emissive;
 	float shininess;
+
+	Material()
+	{
+		diffuse = glm::vec4(0);
+		ambient = glm::vec4(0);
+		specular = glm::vec4(0);
+		emissive = glm::vec4(0);
+		shininess = 0.0f;
+	}
 };
 
 struct Mesh
@@ -41,6 +50,17 @@ struct Light
 {
 	glm::vec4 position;
 	glm::vec3 intensity;
+};
+
+struct ModelAsset
+{
+	GLuint vao;
+	GLuint vbo;
+	GLuint indexBuffer;
+	unsigned int indexCount;
+	unsigned int indexOffset;
+	Material * material;
+	GLenum drawType;
 };
 
 #endif

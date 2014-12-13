@@ -45,6 +45,7 @@ float gl_time = 0.0f;
 // Assimp variables
 Assimp::Importer importer;
 const aiScene* scene;
+Rect sceneBounds;
 float modelScaleFactor;
 std::vector<glm::mat4> matrixStack;
 std::vector<Mesh> meshes;
@@ -88,7 +89,7 @@ Alien alien19;
 Alien alien20;
 std::vector<Alien *> g_Aliens;
 
-std::vector<ModelInstance*> g_Instances;
+std::map<std::string, ModelInstance*> g_Instances;
 
 // glsl handles
 GLuint g_ShaderProgram = 0;
@@ -164,6 +165,8 @@ void DrawInstance(ModelInstance* inst);
 void UpdateAliens(float deltaTime);
 void DoInstanceLogic();
 void TryToFire();
+void HandleInstanceCollisions();
+void SetAlienHitBoxSize();
 
 glm::mat4 Translate(GLfloat x, GLfloat y, GLfloat z);
 
@@ -221,6 +224,8 @@ int main(int argc, char * argv[])
 
 	CreateModelInstances();
 
+	g_Game.m_Instances = g_Instances;
+
 	glutMainLoop();
 }
 
@@ -228,28 +233,44 @@ glm::mat4 Translate(GLfloat x, GLfloat y, GLfloat z)
 {
 	return glm::translate(glm::mat4(), glm::vec3(x, y, z));
 }
+void SetAlienHitBoxSize()
+{
+	for (int i = 0; i < g_Aliens.size(); i++)
+	{
+		g_Aliens[i]->m_HitBox.width = 1.0f;
+		g_Aliens[i]->m_HitBox.height = 1.0f;
+	}
+}
 
 void CreateModelInstances()
 {
 	block1.SetAsset(&cubeAsset);
 	block1.Translate(glm::vec3(-6, -3.5, 0));
 	block1.Scale(glm::vec3(1, 1, 0.5));
-	g_Instances.push_back(&block1);
+	block1.m_Name = "block1";
+	g_Instances["block1"] = &block1;
+	// g_Instances.push_back(&block1);
 
 	block2.SetAsset(&cubeAsset);
 	block2.Translate(glm::vec3(-2, -3.5, 0));
 	block2.Scale(glm::vec3(1, 1, 0.5));
-	g_Instances.push_back(&block2);
+	block2.m_Name = "block2";
+	g_Instances["block2"] = &block2;
+	// g_Instances.push_back(&block2);
 
 	block3.SetAsset(&cubeAsset);
 	block3.Translate(glm::vec3(2, -3.5, 0));
 	block3.Scale(glm::vec3(1, 1, 0.5));
-	g_Instances.push_back(&block3);
+	block3.m_Name = "block3";
+	g_Instances["block3"] = &block3;
+	//g_Instances.push_back(&block3);
 
 	block4.SetAsset(&cubeAsset);
 	block4.Translate(glm::vec3(6, -3.5, 0));
 	block4.Scale(glm::vec3(1, 1, 0.5));
-	g_Instances.push_back(&block4);
+	block4.m_Name = "block4";
+	g_Instances["block4"] = &block4;
+	//g_Instances.push_back(&block4);
 
 	alien1.SetAsset(&alienAsset);
 	alien1.m_Game = &g_Game;
@@ -257,8 +278,9 @@ void CreateModelInstances()
 	alien1.m_HitWall = false;
 	alien1.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien1.Translate(glm::vec3(-6, 4, 0));
-	
-	g_Instances.push_back(&alien1);
+	alien1.m_Name = "alien1";
+	g_Instances["alien1"] = &alien1;
+	//g_Instances.push_back(&alien1);
 	g_Aliens.push_back(&alien1);
 
 	alien2.SetAsset(&alienAsset);
@@ -267,8 +289,9 @@ void CreateModelInstances()
 	alien2.m_HitWall = false;
 	alien2.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien2.Translate(glm::vec3(-5, 4, 0));
-
-	g_Instances.push_back(&alien2);
+	alien2.m_Name = "alien2";
+	g_Instances["alien2"] = &alien2;
+	//g_Instances.push_back(&alien2);
 	g_Aliens.push_back(&alien2);
 
 	alien3.SetAsset(&alienAsset);
@@ -277,8 +300,9 @@ void CreateModelInstances()
 	alien3.m_HitWall = false;
 	alien3.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien3.Translate(glm::vec3(-4, 4, 0));
-
-	g_Instances.push_back(&alien3);
+	alien3.m_Name = "alien3";
+	g_Instances["alien3"] = &alien3;
+	//g_Instances.push_back(&alien3);
 	g_Aliens.push_back(&alien3);
 
 	alien4.SetAsset(&alienAsset);
@@ -287,8 +311,9 @@ void CreateModelInstances()
 	alien4.m_HitWall = false;
 	alien4.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien4.Translate(glm::vec3(-3, 4, 0));
-
-	g_Instances.push_back(&alien4);
+	alien4.m_Name = "alien4";
+	g_Instances["alien4"] = &alien4;
+	//g_Instances.push_back(&alien4);
 	g_Aliens.push_back(&alien4);
 
 	alien5.SetAsset(&alienAsset);
@@ -297,8 +322,9 @@ void CreateModelInstances()
 	alien5.m_HitWall = false;
 	alien5.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien5.Translate(glm::vec3(-2, 4, 0));
-
-	g_Instances.push_back(&alien5);
+	alien5.m_Name = "alien5";
+	g_Instances["alien5"] = &alien5;
+	//g_Instances.push_back(&alien5);
 	g_Aliens.push_back(&alien5);
 
 	alien6.SetAsset(&alienAsset);
@@ -307,8 +333,9 @@ void CreateModelInstances()
 	alien6.m_HitWall = false;
 	alien6.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien6.Translate(glm::vec3(-1, 4, 0));
-
-	g_Instances.push_back(&alien6);
+	alien6.m_Name = "alien6";
+	g_Instances["alien6"] = &alien6;
+	//g_Instances.push_back(&alien6);
 	g_Aliens.push_back(&alien6);
 
 	alien7.SetAsset(&alienAsset);
@@ -317,8 +344,9 @@ void CreateModelInstances()
 	alien7.m_HitWall = false;
 	alien7.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien7.Translate(glm::vec3(0, 4, 0));
-
-	g_Instances.push_back(&alien7);
+	alien7.m_Name = "alien7";
+	g_Instances["alien7"] = &alien7;
+	//g_Instances.push_back(&alien7);
 	g_Aliens.push_back(&alien7);
 
 	alien8.SetAsset(&alienAsset);
@@ -327,8 +355,9 @@ void CreateModelInstances()
 	alien8.m_HitWall = false;
 	alien8.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien8.Translate(glm::vec3(1, 4, 0));
-
-	g_Instances.push_back(&alien8);
+	alien8.m_Name = "alien8";
+	g_Instances["alien8"] = &alien8;
+	//g_Instances.push_back(&alien8);
 	g_Aliens.push_back(&alien8);
 
 	alien9.SetAsset(&alienAsset);
@@ -337,8 +366,9 @@ void CreateModelInstances()
 	alien9.m_HitWall = false;
 	alien9.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien9.Translate(glm::vec3(2, 4, 0));
-
-	g_Instances.push_back(&alien9);
+	alien9.m_Name = "alien9";
+	g_Instances["alien9"] = &alien9;
+	//g_Instances.push_back(&alien9);
 	g_Aliens.push_back(&alien9);
 
 	alien10.SetAsset(&alienAsset);
@@ -347,8 +377,9 @@ void CreateModelInstances()
 	alien10.m_HitWall = false;
 	alien10.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien10.Translate(glm::vec3(3, 4, 0));
-
-	g_Instances.push_back(&alien10);
+	alien10.m_Name = "alien10";
+	g_Instances["alien10"] = &alien10;
+	//g_Instances.push_back(&alien10);
 	g_Aliens.push_back(&alien10);
 
 	alien11.SetAsset(&alienAsset);
@@ -357,8 +388,9 @@ void CreateModelInstances()
 	alien11.m_HitWall = false;
 	alien11.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien11.Translate(glm::vec3(-6, 3, 0));
-
-	g_Instances.push_back(&alien11);
+	alien11.m_Name = "alien11";
+	g_Instances["alien11"] = &alien11;
+	//g_Instances.push_back(&alien11);
 	g_Aliens.push_back(&alien11);
 
 	alien12.SetAsset(&alienAsset);
@@ -367,8 +399,9 @@ void CreateModelInstances()
 	alien12.m_HitWall = false;
 	alien12.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien12.Translate(glm::vec3(-5, 3, 0));
-
-	g_Instances.push_back(&alien12);
+	alien12.m_Name = "alien12";
+	g_Instances["alien12"] = &alien12;
+	//g_Instances.push_back(&alien12);
 	g_Aliens.push_back(&alien12);
 
 	alien13.SetAsset(&alienAsset);
@@ -377,8 +410,9 @@ void CreateModelInstances()
 	alien13.m_HitWall = false;
 	alien13.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien13.Translate(glm::vec3(-4, 3, 0));
-
-	g_Instances.push_back(&alien13);
+	alien13.m_Name = "alien13";
+	g_Instances["alien13"] = &alien13;
+	//g_Instances.push_back(&alien13);
 	g_Aliens.push_back(&alien13);
 
 	alien14.SetAsset(&alienAsset);
@@ -387,8 +421,9 @@ void CreateModelInstances()
 	alien14.m_HitWall = false;
 	alien14.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien14.Translate(glm::vec3(-3, 3, 0));
-
-	g_Instances.push_back(&alien14);
+	alien14.m_Name = "alien14";
+	g_Instances["alien14"] = &alien14;
+	//g_Instances.push_back(&alien14);
 	g_Aliens.push_back(&alien14);
 
 	alien15.SetAsset(&alienAsset);
@@ -397,8 +432,9 @@ void CreateModelInstances()
 	alien15.m_HitWall = false;
 	alien15.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien15.Translate(glm::vec3(-2, 3, 0));
-
-	g_Instances.push_back(&alien15);
+	alien15.m_Name = "alien15";
+	g_Instances["alien15"] = &alien15;
+	//g_Instances.push_back(&alien15);
 	g_Aliens.push_back(&alien15);
 
 	alien16.SetAsset(&alienAsset);
@@ -407,8 +443,9 @@ void CreateModelInstances()
 	alien16.m_HitWall = false;
 	alien16.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien16.Translate(glm::vec3(-1, 3, 0));
-
-	g_Instances.push_back(&alien16);
+	alien16.m_Name = "alien16";
+	g_Instances["alien16"] = &alien16;
+	//g_Instances.push_back(&alien16);
 	g_Aliens.push_back(&alien16);
 
 	alien17.SetAsset(&alienAsset);
@@ -417,8 +454,9 @@ void CreateModelInstances()
 	alien17.m_HitWall = false;
 	alien17.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien17.Translate(glm::vec3(0, 3, 0));
-
-	g_Instances.push_back(&alien17);
+	alien17.m_Name = "alien17";
+	g_Instances["alien17"] = &alien17;
+	//g_Instances.push_back(&alien17);
 	g_Aliens.push_back(&alien17);
 
 	alien18.SetAsset(&alienAsset);
@@ -427,8 +465,9 @@ void CreateModelInstances()
 	alien18.m_HitWall = false;
 	alien18.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien18.Translate(glm::vec3(1, 3, 0));
-
-	g_Instances.push_back(&alien18);
+	alien18.m_Name = "alien18";
+	g_Instances["alien18"] = &alien18;
+	//g_Instances.push_back(&alien18);
 	g_Aliens.push_back(&alien18);
 
 	alien19.SetAsset(&alienAsset);
@@ -437,8 +476,9 @@ void CreateModelInstances()
 	alien19.m_HitWall = false;
 	alien19.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien19.Translate(glm::vec3(2, 3, 0));
-
-	g_Instances.push_back(&alien19);
+	alien19.m_Name = "alien19";
+	g_Instances["alien19"] = &alien19;
+	//g_Instances.push_back(&alien19);
 	g_Aliens.push_back(&alien19);
 
 	alien20.SetAsset(&alienAsset);
@@ -447,19 +487,27 @@ void CreateModelInstances()
 	alien20.m_HitWall = false;
 	alien20.Scale(glm::vec3(0.08, 0.08, 0.01));
 	alien20.Translate(glm::vec3(3, 3, 0));
-
-	g_Instances.push_back(&alien20);
+	alien20.m_Name = "alien20";
+	g_Instances["alien20"] = &alien20;
+	//g_Instances.push_back(&alien20);
 	g_Aliens.push_back(&alien20);
 
 	ship.SetAsset(&shipAsset);
 	ship.Translate(glm::vec3(0, -4.5, 0));
+	glm::quat rotX = glm::angleAxis<float>(glm::radians(90.f), glm::vec3(1, 0, 0));
+	ship.Rotate(rotX);
 	//ship.asset = &shipAsset;
 	/*ship.transform = ship.transform * glm::rotate(ship.transform, -90.0f, glm::vec3(1, 0, 0));
-	ship.transform = glm::translate(ship.transform, glm::vec3(0, 1, -4.5));*/	
-	g_Instances.push_back(&ship);
+	ship.transform = glm::translate(ship.transform, glm::vec3(0, 1, -4.5));*/
+	ship.m_Name = "ship";
+	ship.m_Game = &g_Game;
+	g_Instances["ship"] = &ship;
+	//g_Instances.push_back(&ship);
 
 	/*laserTest.SetAsset(&laserAsset);
 	g_Instances.push_back(&laserTest);*/
+
+	SetAlienHitBoxSize();
 }
 
 void ImportAssets()
@@ -615,11 +663,12 @@ void DisplayGL()
 
 	glUseProgram(g_ShaderProgram);
 
-	for (int i = 0; i < g_Instances.size(); i++)
+	std::map<std::string, ModelInstance*>::iterator it;
+	for (it = g_Game.m_Instances.begin(); it != g_Game.m_Instances.end(); it++)
 	{
-		if (!g_Instances[i]->m_Hidden)
+		if (!it->second->m_Hidden)
 		{
-			DrawInstance(g_Instances[i]);
+			DrawInstance(it->second);
 		}				
 	}
 
@@ -854,11 +903,12 @@ void DoInstanceLogic()
 {
 	if (g_Game.m_GameLogicRequired)
 	{
-		for (int i = 0; i < g_Instances.size(); i++)
+		std::map<std::string, ModelInstance*>::iterator it;
+		for (it = g_Game.m_Instances.begin(); it != g_Game.m_Instances.end(); it++)
 		{
-			g_Instances[i]->DoLogic();
+			it->second->DoLogic();
 		}
-		g_Game.m_GameLogicRequired = false;
+	g_Game.m_GameLogicRequired = false;
 	}
 }
 
@@ -874,7 +924,7 @@ void IdleGL()
 		// Update alien positions
 		UpdateAliens(deltaTime);
 		
-		shot.MoveStep(deltaTime);
+		// shot.MoveStep(deltaTime);
 
 		// Update ship position
 		ship.Translate(glm::vec3(g_D - g_A, 0, 0) * Ship::MOVEMENT_SPEED * deltaTime);
@@ -885,6 +935,8 @@ void IdleGL()
 		glutPostRedisplay();
 		// Perform any changes to instance logic
 		DoInstanceLogic();
+
+		HandleInstanceCollisions();
 	}
 	else
 	{
@@ -894,9 +946,10 @@ void IdleGL()
 
 void UpdateAliens(float deltaTime)
 {
-	for (int i = 0; i < g_Aliens.size(); i++)
+	std::map<std::string, ModelInstance*>::iterator it;
+	for (it = g_Game.m_Instances.begin(); it != g_Game.m_Instances.end(); it++)
 	{
-		g_Aliens[i]->MoveStep(deltaTime);
+		it->second->MoveStep(deltaTime);
 	}
 
 }
@@ -1058,6 +1111,11 @@ bool ImportModelFromFile(const std::string& file)
 
 	modelScaleFactor = 1.0f / tmp;
 
+	sceneBounds.x = sceneMin.x;
+	sceneBounds.y = sceneMin.y;
+	sceneBounds.width = sceneMax.x - sceneMin.x;
+	sceneBounds.height = sceneMax.y - sceneMin.y;
+
 	return true;
 }
 
@@ -1066,6 +1124,12 @@ void LoadAsset(const aiScene* scn, ModelAsset* asset)
 	asset->drawType = GL_TRIANGLES;
 	asset->indexOffset = 0;
 	asset->indexCount = 0;
+	Rect* bounds = new Rect();
+	bounds->x = sceneBounds.x;
+	bounds->y = sceneBounds.y;
+	bounds->width = sceneBounds.width;
+	bounds->height = sceneBounds.height;
+	asset->assetBounds = bounds;
 	
 	glGenVertexArrays(1, &asset->vao);
 	glBindVertexArray(asset->vao);
@@ -1182,8 +1246,37 @@ void GetBoundingBoxForNode(const aiNode* nd, aiVector3D* min, aiVector3D* max)
 }
 
 void TryToFire()
-{	
+{
 	shot.SetAsset(&laserAsset);
+	shot.m_Name = "shot";
+	shot.m_Game = &g_Game;
+ 	shot.Scale(glm::vec3(0.1, 0.1, 0.1));
 	shot.Reinitialize(ship.GetPosition());
-	g_Instances.push_back(&shot);
+	g_Game.m_Instances["shot"] = &shot;
+}
+
+void HandleInstanceCollisions()
+{
+	// Check every instance against every other instance for collision
+	// ...bad...
+	std::map<std::string, ModelInstance*> map = g_Game.m_Instances;
+ 	std::map<std::string, ModelInstance*>::iterator i;
+	
+	for (i = map.begin(); i != map.end(); i++)
+	{
+		std::map<std::string, ModelInstance*>::iterator j = map.find(i->second->m_Name);
+		std::advance(j, 1);
+		for ( ; j != map.end(); j++)
+		{
+			ModelInstance* first = i->second;
+			ModelInstance* second = j->second;
+
+			if (first->CollidesWith(second))
+			{
+				// Let the two instances resolve their collision
+				first->CollidedWith(second);
+				second->CollidedWith(first);
+			}
+		}
+	}
 }

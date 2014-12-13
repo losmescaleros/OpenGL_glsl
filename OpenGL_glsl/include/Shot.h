@@ -12,6 +12,10 @@ public:
 
 	void MoveStep(float deltaTime);
 
+	
+
+	void CollidedWith(ModelInstance* otherModel);
+
 	Game * m_Game;
 
 	bool m_HitSomething;

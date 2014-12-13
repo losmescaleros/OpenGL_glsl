@@ -6,7 +6,13 @@
 #define ENEMY_SHIPS_ROWS 1
 #define ENEMY_SHIPS_COLUMNS 1
 
-
+struct Rect
+{
+	float x;
+	float y;
+	float width;
+	float height;
+};
 
 typedef struct
 {
@@ -71,6 +77,8 @@ struct ModelAsset
 	unsigned int indexOffset;
 	Material * material;
 	GLenum drawType;
+	Rect* assetBounds;
 };
+
 
 #endif

@@ -1,19 +1,23 @@
-﻿Build started 12/12/2014 12:02:36 AM.
+﻿Build started 12/12/2014 10:20:01 PM.
      1>Project "C:\Users\LosMescaleros\Documents\Visual Studio 2013\Projects\OpenGL_glsl\OpenGL_glsl\OpenGL_glsl.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"..\extern\glm-0.9.5.4\\" /I"..\extern\glew-1.11.0\include\\" /I"..\extern\freeglut-2.8.1\include\\" /Iinclude\ /I"..\extern\assimp-3.1.1\include\\" /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _LIB /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt src\main.cpp
          main.cpp
-     1>c:\users\losmescaleros\documents\visual studio 2013\projects\opengl_glsl\opengl_glsl\src\main.cpp(380): warning C4018: '<' : signed/unsigned mismatch
-     1>c:\users\losmescaleros\documents\visual studio 2013\projects\opengl_glsl\opengl_glsl\src\main.cpp(415): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\users\losmescaleros\documents\visual studio 2013\projects\opengl_glsl\opengl_glsl\src\main.cpp(618): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\users\losmescaleros\documents\visual studio 2013\projects\opengl_glsl\opengl_glsl\src\main.cpp(857): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\users\losmescaleros\documents\visual studio 2013\projects\opengl_glsl\opengl_glsl\src\main.cpp(897): warning C4018: '<' : signed/unsigned mismatch
        Link:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:".\bin\OpenGL_glsld.exe" /INCREMENTAL /NOLOGO /LIBPATH:"..\extern\assimp-3.1.1\lib\x86\Debug" /LIBPATH:"..\extern\glew-1.11.0\lib\Debug\Win32" /LIBPATH:"..\extern\freeglut-2.8.1\lib\x86\Debug" freeglut_static.lib glew32sd.lib assimpd.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:".\bin\OpenGL_glsld.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\bin\OpenGL_glsld.lib" /MACHINE:X86 Debug\Barrier.obj
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:".\bin\OpenGL_glsld.exe" /INCREMENTAL /NOLOGO /LIBPATH:"..\extern\assimp-3.1.1\lib\x86\Debug" /LIBPATH:"..\extern\glew-1.11.0\lib\Debug\Win32" /LIBPATH:"..\extern\freeglut-2.8.1\lib\x86\Debug" freeglut_static.lib glew32sd.lib assimpd.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:".\bin\OpenGL_glsld.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\bin\OpenGL_glsld.lib" /MACHINE:X86 Debug\Alien.obj
+         Debug\Barrier.obj
+         Debug\Game.obj
          Debug\ModelInstance.obj
          Debug\Ship.obj
          Debug\Camera.obj
          Debug\main.obj
+         Debug\Shot.obj
          OpenGL_glsl.vcxproj -> C:\Users\LosMescaleros\Documents\Visual Studio 2013\Projects\OpenGL_glsl\OpenGL_glsl\.\bin\OpenGL_glsld.exe
      1>Done Building Project "C:\Users\LosMescaleros\Documents\Visual Studio 2013\Projects\OpenGL_glsl\OpenGL_glsl\OpenGL_glsl.vcxproj" (Build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:01.36
+Time Elapsed 00:00:01.35

@@ -3,6 +3,9 @@
 #include <main.h>
 #include <ModelInstance.h>
 #include <Ship.h>
+#include <Alien.h>
+#include <Shot.h>
+#include <Game.h>
 #include <assimp/Importer.hpp>
 #include <assimp/PostProcess.h>
 #include <assimp/Scene.h>
@@ -35,6 +38,7 @@ glm::quat g_Rotation;
 
 // Time varialbes
 std::clock_t g_PreviousTicks;
+std::clock_t g_ShipPreviousTicks;
 std::clock_t g_CurrentTicks;
 float gl_time = 0.0f;
 
@@ -51,14 +55,38 @@ ModelAsset shipAsset;
 static const std::string shipModel = "../data/models/ship.obj";
 ModelAsset alienAsset;
 static const std::string alienModel = "../data/models/Space_Invader.obj";
+ModelAsset laserAsset;
+static const std::string laserModel = "../data/models/fighter_laser.3ds";
+ModelInstance laserTest;
 
+Shot shot;
 Ship ship;
 ModelInstance block1;
 ModelInstance block2;
 ModelInstance block3;
 ModelInstance block4;
 
-ModelInstance alien1;
+Alien alien1;
+Alien alien2;
+Alien alien3;
+Alien alien4;
+Alien alien5;
+Alien alien6;
+Alien alien7;
+Alien alien8;
+Alien alien9;
+Alien alien10;
+Alien alien11;
+Alien alien12;
+Alien alien13;
+Alien alien14;
+Alien alien15;
+Alien alien16;
+Alien alien17;
+Alien alien18;
+Alien alien19;
+Alien alien20;
+std::vector<Alien *> g_Aliens;
 
 std::vector<ModelInstance*> g_Instances;
 
@@ -89,6 +117,7 @@ std::string vertexShaderFilePath = "../data/shaders/lambertianShader.vert";
 std::string fragmentShaderFilePath = "../data/shaders/lambertianShader.frag";
 
 // Game variables
+Game g_Game;
 GLuint vertexBuffer, indexBuffer;
 
 std::vector<GLuint> g_vertexBuffers;
@@ -132,6 +161,9 @@ void GenerateVaosAndBuffers(const aiScene* scn, ModelAsset* asset);
 void CreateModelInstances();
 void LoadAsset(const aiScene* scn, ModelAsset* asset);
 void DrawInstance(ModelInstance* inst);
+void UpdateAliens(float deltaTime);
+void DoInstanceLogic();
+void TryToFire();
 
 glm::mat4 Translate(GLfloat x, GLfloat y, GLfloat z);
 
@@ -143,7 +175,13 @@ int main(int argc, char * argv[])
 {
 	// Initialize some global varialbes
 	g_PreviousTicks = std::clock();
+	g_ShipPreviousTicks = std::clock();
+
 	g_A = g_W = g_S = g_D = g_Q = g_E = 0;
+	g_Game.m_GameOver = false;
+	g_Game.m_AlienDirection = 1.0f;
+	g_Game.m_AlienMovementSpeed = 1.0f;
+	g_Game.m_AlienHitWall = false;
 
 	// Initialize the camera position and rotation
 	g_Camera.SetPosition(g_InitialCameraPosition);
@@ -214,17 +252,214 @@ void CreateModelInstances()
 	g_Instances.push_back(&block4);
 
 	alien1.SetAsset(&alienAsset);
-	alien1.Scale(glm::vec3(0.1, 0.1, 0.05));
-	alien1.Translate(glm::vec3(-7, 4, 0));
+	alien1.m_Game = &g_Game;
+	alien1.m_DeltaX = 1.0f;
+	alien1.m_HitWall = false;
+	alien1.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien1.Translate(glm::vec3(-6, 4, 0));
+	
 	g_Instances.push_back(&alien1);
+	g_Aliens.push_back(&alien1);
+
+	alien2.SetAsset(&alienAsset);
+	alien2.m_Game = &g_Game;
+	alien2.m_DeltaX = 1.0f;
+	alien2.m_HitWall = false;
+	alien2.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien2.Translate(glm::vec3(-5, 4, 0));
+
+	g_Instances.push_back(&alien2);
+	g_Aliens.push_back(&alien2);
+
+	alien3.SetAsset(&alienAsset);
+	alien3.m_Game = &g_Game;
+	alien3.m_DeltaX = 1.0f;
+	alien3.m_HitWall = false;
+	alien3.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien3.Translate(glm::vec3(-4, 4, 0));
+
+	g_Instances.push_back(&alien3);
+	g_Aliens.push_back(&alien3);
+
+	alien4.SetAsset(&alienAsset);
+	alien4.m_Game = &g_Game;
+	alien4.m_DeltaX = 1.0f;
+	alien4.m_HitWall = false;
+	alien4.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien4.Translate(glm::vec3(-3, 4, 0));
+
+	g_Instances.push_back(&alien4);
+	g_Aliens.push_back(&alien4);
+
+	alien5.SetAsset(&alienAsset);
+	alien5.m_Game = &g_Game;
+	alien5.m_DeltaX = 1.0f;
+	alien5.m_HitWall = false;
+	alien5.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien5.Translate(glm::vec3(-2, 4, 0));
+
+	g_Instances.push_back(&alien5);
+	g_Aliens.push_back(&alien5);
+
+	alien6.SetAsset(&alienAsset);
+	alien6.m_Game = &g_Game;
+	alien6.m_DeltaX = 1.0f;
+	alien6.m_HitWall = false;
+	alien6.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien6.Translate(glm::vec3(-1, 4, 0));
+
+	g_Instances.push_back(&alien6);
+	g_Aliens.push_back(&alien6);
+
+	alien7.SetAsset(&alienAsset);
+	alien7.m_Game = &g_Game;
+	alien7.m_DeltaX = 1.0f;
+	alien7.m_HitWall = false;
+	alien7.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien7.Translate(glm::vec3(0, 4, 0));
+
+	g_Instances.push_back(&alien7);
+	g_Aliens.push_back(&alien7);
+
+	alien8.SetAsset(&alienAsset);
+	alien8.m_Game = &g_Game;
+	alien8.m_DeltaX = 1.0f;
+	alien8.m_HitWall = false;
+	alien8.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien8.Translate(glm::vec3(1, 4, 0));
+
+	g_Instances.push_back(&alien8);
+	g_Aliens.push_back(&alien8);
+
+	alien9.SetAsset(&alienAsset);
+	alien9.m_Game = &g_Game;
+	alien9.m_DeltaX = 1.0f;
+	alien9.m_HitWall = false;
+	alien9.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien9.Translate(glm::vec3(2, 4, 0));
+
+	g_Instances.push_back(&alien9);
+	g_Aliens.push_back(&alien9);
+
+	alien10.SetAsset(&alienAsset);
+	alien10.m_Game = &g_Game;
+	alien10.m_DeltaX = 1.0f;
+	alien10.m_HitWall = false;
+	alien10.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien10.Translate(glm::vec3(3, 4, 0));
+
+	g_Instances.push_back(&alien10);
+	g_Aliens.push_back(&alien10);
+
+	alien11.SetAsset(&alienAsset);
+	alien11.m_Game = &g_Game;
+	alien11.m_DeltaX = 1.0f;
+	alien11.m_HitWall = false;
+	alien11.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien11.Translate(glm::vec3(-6, 3, 0));
+
+	g_Instances.push_back(&alien11);
+	g_Aliens.push_back(&alien11);
+
+	alien12.SetAsset(&alienAsset);
+	alien12.m_Game = &g_Game;
+	alien12.m_DeltaX = 1.0f;
+	alien12.m_HitWall = false;
+	alien12.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien12.Translate(glm::vec3(-5, 3, 0));
+
+	g_Instances.push_back(&alien12);
+	g_Aliens.push_back(&alien12);
+
+	alien13.SetAsset(&alienAsset);
+	alien13.m_Game = &g_Game;
+	alien13.m_DeltaX = 1.0f;
+	alien13.m_HitWall = false;
+	alien13.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien13.Translate(glm::vec3(-4, 3, 0));
+
+	g_Instances.push_back(&alien13);
+	g_Aliens.push_back(&alien13);
+
+	alien14.SetAsset(&alienAsset);
+	alien14.m_Game = &g_Game;
+	alien14.m_DeltaX = 1.0f;
+	alien14.m_HitWall = false;
+	alien14.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien14.Translate(glm::vec3(-3, 3, 0));
+
+	g_Instances.push_back(&alien14);
+	g_Aliens.push_back(&alien14);
+
+	alien15.SetAsset(&alienAsset);
+	alien15.m_Game = &g_Game;
+	alien15.m_DeltaX = 1.0f;
+	alien15.m_HitWall = false;
+	alien15.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien15.Translate(glm::vec3(-2, 3, 0));
+
+	g_Instances.push_back(&alien15);
+	g_Aliens.push_back(&alien15);
+
+	alien16.SetAsset(&alienAsset);
+	alien16.m_Game = &g_Game;
+	alien16.m_DeltaX = 1.0f;
+	alien16.m_HitWall = false;
+	alien16.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien16.Translate(glm::vec3(-1, 3, 0));
+
+	g_Instances.push_back(&alien16);
+	g_Aliens.push_back(&alien16);
+
+	alien17.SetAsset(&alienAsset);
+	alien17.m_Game = &g_Game;
+	alien17.m_DeltaX = 1.0f;
+	alien17.m_HitWall = false;
+	alien17.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien17.Translate(glm::vec3(0, 3, 0));
+
+	g_Instances.push_back(&alien17);
+	g_Aliens.push_back(&alien17);
+
+	alien18.SetAsset(&alienAsset);
+	alien18.m_Game = &g_Game;
+	alien18.m_DeltaX = 1.0f;
+	alien18.m_HitWall = false;
+	alien18.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien18.Translate(glm::vec3(1, 3, 0));
+
+	g_Instances.push_back(&alien18);
+	g_Aliens.push_back(&alien18);
+
+	alien19.SetAsset(&alienAsset);
+	alien19.m_Game = &g_Game;
+	alien19.m_DeltaX = 1.0f;
+	alien19.m_HitWall = false;
+	alien19.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien19.Translate(glm::vec3(2, 3, 0));
+
+	g_Instances.push_back(&alien19);
+	g_Aliens.push_back(&alien19);
+
+	alien20.SetAsset(&alienAsset);
+	alien20.m_Game = &g_Game;
+	alien20.m_DeltaX = 1.0f;
+	alien20.m_HitWall = false;
+	alien20.Scale(glm::vec3(0.08, 0.08, 0.01));
+	alien20.Translate(glm::vec3(3, 3, 0));
+
+	g_Instances.push_back(&alien20);
+	g_Aliens.push_back(&alien20);
 
 	ship.SetAsset(&shipAsset);
 	ship.Translate(glm::vec3(0, -4.5, 0));
 	//ship.asset = &shipAsset;
 	/*ship.transform = ship.transform * glm::rotate(ship.transform, -90.0f, glm::vec3(1, 0, 0));
-	ship.transform = glm::translate(ship.transform, glm::vec3(0, 1, -4.5));*/
-	
+	ship.transform = glm::translate(ship.transform, glm::vec3(0, 1, -4.5));*/	
 	g_Instances.push_back(&ship);
+
+	/*laserTest.SetAsset(&laserAsset);
+	g_Instances.push_back(&laserTest);*/
 }
 
 void ImportAssets()
@@ -237,6 +472,9 @@ void ImportAssets()
 
 	ImportModelFromFile(alienModel);
 	LoadAsset(scene, &alienAsset);
+
+	ImportModelFromFile(laserModel);
+	LoadAsset(scene, &laserAsset);
 }
 
 //bool ImportAssets(std::string modelFile, ModelAsset* asset)
@@ -379,7 +617,10 @@ void DisplayGL()
 
 	for (int i = 0; i < g_Instances.size(); i++)
 	{
-		DrawInstance(g_Instances[i]);		
+		if (!g_Instances[i]->m_Hidden)
+		{
+			DrawInstance(g_Instances[i]);
+		}				
 	}
 
 	// Unbind program and vertex array, then swap buffers
@@ -405,45 +646,45 @@ void DrawInstance(ModelInstance* inst)
 	glBindVertexArray(0);
 }
 
-void DrawElements(const aiScene* scn, const aiNode* nd)
-{
-	aiMatrix4x4 m = nd->mTransformation;
-	m.Transpose();
+//void DrawElements(const aiScene* scn, const aiNode* nd)
+//{
+//	aiMatrix4x4 m = nd->mTransformation;
+//	m.Transpose();
+//
+//	glm::mat4 modelMatrix = glm::toMat4(g_Rotation);
+//
+//	for (int i = 0; i < meshes.size(); i++)
+//	{
+//		glBindVertexArray(meshes[i].vao);
+//		glm::mat4 mvp = g_Camera.GetProjectionMatrix() * g_Camera.GetViewMatrix() * modelMatrix;
+//		glUniformMatrix4fv(g_UniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
+//		
+//
+//		glDrawElements(GL_TRIANGLES, meshes[i].indexCount, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
+//	}
+//
+//	/*for (int j = 0; j < nd->mNumChildren; j++)
+//	{
+//		DrawElements(scn, nd->mChildren[j]);
+//	}*/
+//}
 
-	glm::mat4 modelMatrix = glm::toMat4(g_Rotation);
-
-	for (int i = 0; i < meshes.size(); i++)
-	{
-		glBindVertexArray(meshes[i].vao);
-		glm::mat4 mvp = g_Camera.GetProjectionMatrix() * g_Camera.GetViewMatrix() * modelMatrix;
-		glUniformMatrix4fv(g_UniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
-		
-
-		glDrawElements(GL_TRIANGLES, meshes[i].indexCount, GL_UNSIGNED_INT, BUFFER_OFFSET(0));
-	}
-
-	/*for (int j = 0; j < nd->mNumChildren; j++)
-	{
-		DrawElements(scn, nd->mChildren[j]);
-	}*/
-}
-
-void DrawElement(GLuint vao, GLuint shaderProgram, glm::mat4 model, std::vector<GLuint> indices, GLuint vertexBuffer)
-{
-	glUseProgram(shaderProgram);
-	glBindVertexArray(vao);
-
-	glm::mat4 mvp = g_Camera.GetProjectionMatrix() * g_Camera.GetViewMatrix() * model;
-	// Pass information to shaders
-	glUniformMatrix4fv(g_UniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
-
-	glUniform1fARB(g_TimeUniformId, gl_time);
-	// Draw
-	glDrawElements(GL_TRIANGLES,
-		indices.size(),
-		GL_UNSIGNED_INT,
-		BUFFER_OFFSET(0));
-}
+//void DrawElement(GLuint vao, GLuint shaderProgram, glm::mat4 model, std::vector<GLuint> indices, GLuint vertexBuffer)
+//{
+//	glUseProgram(shaderProgram);
+//	glBindVertexArray(vao);
+//
+//	glm::mat4 mvp = g_Camera.GetProjectionMatrix() * g_Camera.GetViewMatrix() * model;
+//	// Pass information to shaders
+//	glUniformMatrix4fv(g_UniformMVP, 1, GL_FALSE, glm::value_ptr(mvp));
+//
+//	glUniform1fARB(g_TimeUniformId, gl_time);
+//	// Draw
+//	glDrawElements(GL_TRIANGLES,
+//		indices.size(),
+//		GL_UNSIGNED_INT,
+//		BUFFER_OFFSET(0));
+//}
 
 void InitGL(int argc, char * argv[])
 {
@@ -609,28 +850,64 @@ void ReshapeGL(int width, int height)
 	glutPostRedisplay();
 }
 
+void DoInstanceLogic()
+{
+	if (g_Game.m_GameLogicRequired)
+	{
+		for (int i = 0; i < g_Instances.size(); i++)
+		{
+			g_Instances[i]->DoLogic();
+		}
+		g_Game.m_GameLogicRequired = false;
+	}
+}
+
 void IdleGL()
 {
-	g_CurrentTicks = std::clock();
-	float deltaTicks = (float)(g_CurrentTicks - g_PreviousTicks);
-	g_PreviousTicks = g_CurrentTicks;
-
-	float deltaTime = deltaTicks / (float)CLOCKS_PER_SEC;
-
-	float cameraSpeed = 1.0f;
+	if (!g_Game.m_GameOver)
+	{
+		g_CurrentTicks = std::clock();
+		float deltaTicks = (float)(g_CurrentTicks - g_PreviousTicks);
+		float deltaTime = deltaTicks / (float)CLOCKS_PER_SEC;
+		g_PreviousTicks = g_CurrentTicks;
 	
-	ship.Translate(glm::vec3(g_D - g_A, 0, 0) * Ship::MOVEMENT_SPEED * deltaTime);
-	alien1.Translate(glm::vec3(1, 0, 0) * cameraSpeed * deltaTime);
+		// Update alien positions
+		UpdateAliens(deltaTime);
+		
+		shot.MoveStep(deltaTime);
 
-	g_Camera.Translate(glm::vec3(0, g_Q - g_E, g_S - g_W) * cameraSpeed * deltaTime);
+		// Update ship position
+		ship.Translate(glm::vec3(g_D - g_A, 0, 0) * Ship::MOVEMENT_SPEED * deltaTime);
+		// Update camera position
+		float cameraSpeed = 1.0f;
+		g_Camera.Translate(glm::vec3(0, g_Q - g_E, g_S - g_W) * cameraSpeed * deltaTime);
+		// Redraw
+		glutPostRedisplay();
+		// Perform any changes to instance logic
+		DoInstanceLogic();
+	}
+	else
+	{
+		exit(0);
+	}
+}
 
-	glutPostRedisplay();
+void UpdateAliens(float deltaTime)
+{
+	for (int i = 0; i < g_Aliens.size(); i++)
+	{
+		g_Aliens[i]->MoveStep(deltaTime);
+	}
+
 }
 
 void KeyboardGL(unsigned char c, int x, int y)
 {
 	switch (c)
 	{
+	case ' ':
+		TryToFire();
+		break;
 	case 'w':
 	case 'W':
 		g_W = 1;
@@ -904,12 +1181,9 @@ void GetBoundingBoxForNode(const aiNode* nd, aiVector3D* min, aiVector3D* max)
 	}
 }
 
-void PushMatrix(glm::mat4 matrix)
-{
-	matrixStack.push_back(matrix);
-}
-
-void PopMatrix()
-{
-	matrixStack.pop_back();
+void TryToFire()
+{	
+	shot.SetAsset(&laserAsset);
+	shot.Reinitialize(ship.GetPosition());
+	g_Instances.push_back(&shot);
 }

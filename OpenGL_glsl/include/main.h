@@ -1,9 +1,12 @@
 #ifndef _MAIN_H
 #define _MAIN_H
+
 #include <OpenGL_Shaders.h>
 
 #define ENEMY_SHIPS_ROWS 1
 #define ENEMY_SHIPS_COLUMNS 1
+
+
 
 typedef struct
 {
@@ -18,6 +21,13 @@ struct Vertex
 	glm::vec3 Position;
 	glm::vec3 Normal;
 };
+
+//struct Game
+//{
+//	bool GameOver;
+//	bool AlienHitWall;
+//	float AlienDirection;
+//};
 
 struct Material
 {

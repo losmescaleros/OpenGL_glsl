@@ -1,11 +1,22 @@
-﻿Build started 12/13/2014 3:46:34 PM.
+﻿Build started 12/13/2014 8:00:45 PM.
      1>Project "C:\Users\LosMescaleros\Documents\Visual Studio 2013\Projects\OpenGL_glsl\OpenGL_glsl\OpenGL_glsl.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
-         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"..\extern\glm-0.9.5.4\\" /I"..\extern\glew-1.11.0\include\\" /I"..\extern\freeglut-2.8.1\include\\" /Iinclude\ /I"..\extern\assimp-3.1.1\include\\" /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _LIB /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt src\main.cpp
+         C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"..\extern\glm-0.9.5.4\\" /I"..\extern\glew-1.11.0\include\\" /I"..\extern\freeglut-2.8.1\include\\" /Iinclude\ /I"..\extern\assimp-3.1.1\include\\" /ZI /nologo /W3 /WX- /sdl /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _LIB /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt src\Alien.cpp src\AlienShot.cpp src\Barrier.cpp src\Game.cpp src\ModelInstance.cpp src\Ship.cpp src\main.cpp src\Shot.cpp
+         Shot.cpp
          main.cpp
-     1>c:\users\losmescaleros\documents\visual studio 2013\projects\opengl_glsl\opengl_glsl\src\main.cpp(238): warning C4018: '<' : signed/unsigned mismatch
+     1>c:\users\losmescaleros\documents\visual studio 2013\projects\opengl_glsl\opengl_glsl\src\main.cpp(185): warning C4244: 'argument' : conversion from 'time_t' to 'unsigned int', possible loss of data
+     1>c:\users\losmescaleros\documents\visual studio 2013\projects\opengl_glsl\opengl_glsl\src\main.cpp(248): warning C4018: '<' : signed/unsigned mismatch
+         Barrier.cpp
+         AlienShot.cpp
+         Generating Code...
+         Skipping... (no relevant changes detected)
+         Ship.cpp
+         ModelInstance.cpp
+         Game.cpp
+         Alien.cpp
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:".\bin\OpenGL_glsld.exe" /INCREMENTAL /NOLOGO /LIBPATH:"..\extern\assimp-3.1.1\lib\x86\Debug" /LIBPATH:"..\extern\glew-1.11.0\lib\Debug\Win32" /LIBPATH:"..\extern\freeglut-2.8.1\lib\x86\Debug" freeglut_static.lib glew32sd.lib assimpd.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:".\bin\OpenGL_glsld.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:".\bin\OpenGL_glsld.lib" /MACHINE:X86 Debug\Alien.obj
+         Debug\AlienShot.obj
          Debug\Barrier.obj
          Debug\Game.obj
          Debug\ModelInstance.obj
@@ -19,4 +30,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:01.56
+Time Elapsed 00:00:03.63

@@ -218,6 +218,7 @@ int main(int argc, char * argv[])
 	// Get handles for glsl vertex locations
 	g_PositionAttributeId = glGetAttribLocation(g_ShaderProgram, "in_position");
 	g_NormalAttributeId = glGetAttribLocation(g_ShaderProgram, "in_normal");
+	g_DiffuseColorAttributeId = glGetAttribLocation(g_ShaderProgram, "in_diffuse");
 
 	// Get handles for glsl uniform variables
 	g_UniformMVP = glGetUniformLocation(g_ShaderProgram, "MVP");
@@ -1152,6 +1153,19 @@ void LoadAsset(const aiScene* scn, ModelAsset* asset)
 
 		const aiMesh* aiMesh = scn->mMeshes[i];
 		
+		aiMaterial* aiMaterial = scn->mMaterials[aiMesh->mMaterialIndex];
+		// TODO: get material parameters
+
+		aiColor4D diffuse(0.f, 0.f, 0.f, 0.f);
+
+		Material* material = new Material();
+
+		// asset->material->diffuse = glm::vec4(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
+		if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_DIFFUSE, &diffuse) == AI_SUCCESS)
+		{
+			material->diffuse = glm::vec4(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
+		}
+
 		// get the vertices 
 		for (unsigned j = 0; j < aiMesh->mNumVertices; j++)
 		{
@@ -1167,6 +1181,7 @@ void LoadAsset(const aiScene* scn, ModelAsset* asset)
 				v.Normal = glm::vec3(norm.x, norm.y, norm.z);
 			}
 
+			v.Diffuse = material->diffuse;
 			vertices.push_back(v);
 		}
 		for (unsigned int t = 0; t < aiMesh->mNumFaces; t++)
@@ -1181,18 +1196,7 @@ void LoadAsset(const aiScene* scn, ModelAsset* asset)
 			indices.push_back(face->mIndices[1] + vertexIndexOffset);
 			indices.push_back(face->mIndices[2] + vertexIndexOffset);
 		}
-		aiMaterial* aiMaterial = scn->mMaterials[aiMesh->mMaterialIndex];
-		// TODO: get material parameters
-
-		aiColor4D diffuse(0.f, 0.f, 0.f, 0.f);
-
-		Material* material = new Material();
 		
-		// asset->material->diffuse = glm::vec4(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
-		if (aiGetMaterialColor(aiMaterial, AI_MATKEY_COLOR_DIFFUSE, &diffuse) == AI_SUCCESS)
-		{
-			material->diffuse = glm::vec4(diffuse.r, diffuse.g, diffuse.b, diffuse.a);
-		}
 		asset->material = material;
 		// asset->material = material;
 		asset->indexCount = indices.size() - indexCountBefore;
@@ -1209,6 +1213,9 @@ void LoadAsset(const aiScene* scn, ModelAsset* asset)
 
 	glVertexAttribPointer(g_NormalAttributeId, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), MEMBER_OFFSET(Vertex, Normal));
 	glEnableVertexAttribArray(g_NormalAttributeId);
+
+	glVertexAttribPointer(g_DiffuseColorAttributeId, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), MEMBER_OFFSET(Vertex, Diffuse));
+	glEnableVertexAttribArray(g_DiffuseColorAttributeId);
 	// Unbind
 	glBindVertexArray(0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);

@@ -3,8 +3,10 @@
 #include <main.h>
 #include <ModelInstance.h>
 #include <Ship.h>
+#include <Barrier.h>
 #include <Alien.h>
 #include <Shot.h>
+#include <AlienShot.h>
 #include <Game.h>
 #include <assimp/Importer.hpp>
 #include <assimp/PostProcess.h>
@@ -37,6 +39,8 @@ glm::ivec2 g_MousePosition;
 glm::quat g_Rotation;
 
 // Time varialbes
+std::clock_t g_LastAlienShot;
+std::clock_t g_ShotCurrentTicks;
 std::clock_t g_PreviousTicks;
 std::clock_t g_ShipPreviousTicks;
 std::clock_t g_CurrentTicks;
@@ -62,10 +66,10 @@ ModelInstance laserTest;
 
 Shot shot;
 Ship ship;
-ModelInstance block1;
-ModelInstance block2;
-ModelInstance block3;
-ModelInstance block4;
+Barrier block1;
+Barrier block2;
+Barrier block3;
+Barrier block4;
 
 Alien alien1;
 Alien alien2;
@@ -167,6 +171,7 @@ void DoInstanceLogic();
 void TryToFire();
 void HandleInstanceCollisions();
 void SetAlienHitBoxSize();
+void AliensTryToFire();
 
 glm::mat4 Translate(GLfloat x, GLfloat y, GLfloat z);
 
@@ -176,9 +181,13 @@ void PopMatrix();
 
 int main(int argc, char * argv[])
 {
+	// Seed random number for alien shots
+	srand(time(NULL));
 	// Initialize some global varialbes
 	g_PreviousTicks = std::clock();
 	g_ShipPreviousTicks = std::clock();
+	g_ShotCurrentTicks = std::clock();
+	g_LastAlienShot = std::clock();
 
 	g_A = g_W = g_S = g_D = g_Q = g_E = 0;
 	g_Game.m_GameOver = false;
@@ -924,7 +933,7 @@ void IdleGL()
 		// Update alien positions
 		UpdateAliens(deltaTime);
 		
-		// shot.MoveStep(deltaTime);
+		AliensTryToFire();
 
 		// Update ship position
 		ship.Translate(glm::vec3(g_D - g_A, 0, 0) * Ship::MOVEMENT_SPEED * deltaTime);
@@ -963,7 +972,6 @@ void KeyboardGL(unsigned char c, int x, int y)
 		break;
 	case 'w':
 	case 'W':
-		g_W = 1;
 		break;
 	case 'a':
 	case 'A':
@@ -971,7 +979,6 @@ void KeyboardGL(unsigned char c, int x, int y)
 		break;
 	case 's':
 	case 'S':
-		g_S = 1;
 		break;
 	case 'd':
 	case 'D':
@@ -979,16 +986,12 @@ void KeyboardGL(unsigned char c, int x, int y)
 		break;
 	case 'q':
 	case 'Q':
-		g_Q = 1;
 		break;
 	case 'e':
 	case 'E':
-		g_E = 1;
 		break;
 	case 'r':
 	case 'R':
-		g_Camera.SetPosition(g_InitialCameraPosition);
-		g_Rotation = glm::quat();
 		break;
 	case 27:
 		// Escape key
@@ -1253,6 +1256,32 @@ void TryToFire()
  	shot.Scale(glm::vec3(0.1, 0.1, 0.1));
 	shot.Reinitialize(ship.GetPosition());
 	g_Game.m_Instances["shot"] = &shot;
+}
+
+
+
+void AliensTryToFire()
+{
+	g_ShotCurrentTicks = std::clock();
+	float deltaTicks = (float)(g_ShotCurrentTicks - g_LastAlienShot);
+	float deltaTime = deltaTicks / (float)CLOCKS_PER_SEC;
+	
+	if (deltaTime > 2)
+	{
+		float randX = static_cast<float>(rand()) / static_cast<float>(RAND_MAX / 7);
+		randX *= floor(rand() % 2) == 1 ? 1 : -1;
+		g_LastAlienShot = std::clock();
+		AlienShot* alienShot = new AlienShot();
+		alienShot->SetAsset(&laserAsset);
+		alienShot->m_Name = "alienShot";
+		alienShot->m_Game = &g_Game;
+		// glm::quat rotX = glm::angleAxis<float>(glm::radians(90.f), glm::vec3(1, 0, 0));
+		// alienShot->Rotate(rotX);
+		alienShot->Scale(glm::vec3(0.15, 0.15, 0.15));
+
+		alienShot->Reinitialize(glm::vec3(randX, 5, 0));
+		g_Game.m_Instances["alienShot"] = alienShot;
+	}	
 }
 
 void HandleInstanceCollisions()

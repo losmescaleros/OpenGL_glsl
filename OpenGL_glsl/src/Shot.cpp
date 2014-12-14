@@ -1,6 +1,7 @@
 #include <Shot.h>
 #include <Alien.h>
 
+
 const float Shot::UPPER_BOUNDARY = 10;
 const float Shot::MOVEMENT_SPEED = 200.0f;
 

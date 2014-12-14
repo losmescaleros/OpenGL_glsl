@@ -1,30 +1,16 @@
 #include <OpenGL_Shaders.h>
 #include <Barrier.h>
+#include <AlienShot.h>
+
+const int Barrier::MAX_SHOTS = 2;
 
 Barrier::Barrier()
-	:position(0),
-	isAlive(true),
-	hitPoints(0)
+	: m_ShotsTaken(0)
 {
 
 }
 
-Barrier::Barrier(float width, float height, HitBox2d& hitBox, glm::vec3 pos, int hitPoints)
-	:position(pos),
-	hitBox(hitBox),
-	width(width),
-	height(height),
-	hitPoints(hitPoints)
+void Barrier::CollidedWith(ModelInstance* otherModel)
 {
 
-}
-
-glm::vec3 Barrier::GetPosition()
-{
-	return position;
-}
-
-void Barrier::SetPosition(const glm::vec3& pos)
-{
-	position = pos;
 }
